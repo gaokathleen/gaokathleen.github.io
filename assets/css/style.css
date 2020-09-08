@@ -47,7 +47,7 @@ body {
     font-size:18px;
     width: 800px;
     position: absolute;
-    top: 55%;
+    top: 57%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
@@ -57,7 +57,7 @@ body {
     flex-direction: row;
     justify-content: center;
     position: absolute;
-    top: 66%;
+    top: 68%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
@@ -270,10 +270,12 @@ button:hover {
     font-family: 'Montserrat', sans-serif;
     font-weight: 200;
     font-size: 40px;
-      margin: 50px;
+      margin-top: 50px;
+      margin-bottom: 20px;
   }
   .grid {
   margin: 0 auto;
+  max-width: 1250px;
     }
 
     /* clearfix */
@@ -362,13 +364,13 @@ button:hover {
             font-family: 'Montserrat', sans-serif;
             font-weight: 200;
             font-size: 40px;
-            margin-top: 40px;
+            margin-top: 20px;
+            margin-bottom: 20px;
           } 
         .hermContainer {
             display: flex;
             flex-direction: row;
             justify-content: center;
-            margin-bottom: 50px;
         }
   
         #hermIm {
