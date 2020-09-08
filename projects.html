@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp"
+        rel="stylesheet">
+    <script src="assets/js/projects.js"></script>
+</head>
+<header>
+    <div class="headerBar">
+        <div id="logo">
+            KATHLEEN GAO
+        </div>
+        <nav>
+            <a href="index.html">
+                <div class="navlabel">
+                    <span class="material-icons-round">
+                        person
+                    </span>
+                    <div class="label">about</div>
+                </div>
+            </a>
+            <a href="projects.html">
+                <div class="navlabel">
+                    <span class="material-icons-round">
+                        code
+                    </span>
+                    <div class="label">projects</div>
+                </div>
+            </a>
+            <a href="art.html">
+                <div class="navlabel">
+                    <span class="material-icons-round">
+                        palette
+                    </span>
+                    <div class="label">art</div>
+                </div>
+            </a>
+            <!-- <a href="hermitage/index.html">
+                <div class="navlabel">
+                    <span class="material-icons-round">
+                        home
+                    </span>
+                    <div class="label">l'hermitage</div>
+                </div>
+            </a> -->
+            <a href="contact.html">
+                <div class="navlabel">
+                    <span class="material-icons-round">
+                        email
+                    </span>
+                    <div class="label">contact</div>
+                </div>
+            </a>
+
+        </nav>
+    </div>
+</header>
+
+<body>
+
+    <div class="projectsContainer">
+        <div class="navigationSidebar">
+            <div id="sidebar">
+                <div class="projectHeader">PROJECTS</div>
+                <div id="sidebar-content">
+                    <a href="#rasterizer">
+                        <button onclick="show('rasterizer')">Rasterizer</button>
+                    </a>
+                    <a href="#meshEdit">
+                        <button onclick="show('meshEdit')">MeshEdit</button>
+                    </a>
+                    <a href="#pathTracer">
+                        <button onclick="show('pathTracer')">PathTracer</button>
+                    </a>
+                    <a href="#clothSim">
+                        <button onclick="show('clothSim')">ClothSim</button>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+        <!--PROJECT 1: RASTERIZER-->
+        <div class="card vertical" id="rasterizer">
+            <h1 style="margin-bottom: 30px">Rasterizer</h1>
+            <h2>Overview</h2>
+            <p> In this project, I built a rasterizer that renders an input image, given as an SVG file. This process
+                included implementing algorithms such as supersampling to support antialiasing, a Barycentric coordinate
+                system, hierarchical transforms, and texture mapping using "pixel sampling" and "level sampling". I
+                thought the most interesting part of the project was being able to toggle between
+                bilinear sampling and nearest pixel sampling to see the difference in efficacity.</p>
+            <h2>Section I: Rasterization</h2>
+            <h3>Part 1: Rasterizing single-color triangles</h3>
+            <p>I rasterized triangles by implementing a function called <strong>rasterize_triangle</strong> that took in
+                three vertices and a color as parameters. Given these vertices,
+                I computed a bounding box for the triangle and iterated through each pixel in this box. For each pixel,
+                I then check that it passes my <strong>is_Inside</strong> helper function, which
+                when called thrice, ensures that the sample (center point of the pixel) is within a triangle.
+                Additionally, I added support for both the clockwise and counterclockwise directions.
+                If the sample is contained within a given triangle, I pass it as an argument to the
+                <strong>fill_pixel</strong> function, which adds the given <em>color's</em> rgb values to their
+                appropriate
+                indices in the framebuffer.</p>
+            <div class="imageContainer">
+                <img style="width:50%" src="assets/img/rasterizer/task1.png" />
+            </div>
+            <h3>Part 2: Antialiasing triangles</h3>
+            <p>To implement supersampling, I updated the <strong>rasterize_triangle</strong> function to iterate through
+                the sample rate number of subpixels of each pixel. I then performed the <strong>isInside</strong>
+                triangle check in the same
+                way as Task 1. If a subpixel was found to be inside the given triangle, I would call
+                <strong>fill_supersample</strong>, a helper function that calculates the correct index of the
+                <em>supersample_buffer</em> and
+                adds a given color as the value at that index. The supersample buffer was a data structure that was
+                sample rate times larger than the framebuffer, and allowed supersampling support because it accounted
+                for subpixel values.
+                I also modified the <strong>fill_pixel</strong> function to add the original points and lines from the
+                SVG file into the <em>supersample_buffer</em>.
+                Once the <em>supersample_buffer</em> was correctly filled with subpixel sample values, I averaged the
+                subpixel color values for each pixel and added the averages to the framebuffer in the
+                <strong>resolve_to_framebuffer</strong> function.
+                An important part of supersampling also consisted of managing the memory of the supersample buffer. To
+                handle this, I resized the supersample buffer in <strong>set_sample_rate, set_framebuffer_target, and
+                    clear_buffers</strong>.
+                Supersampling is useful because since we are sampling more times, the resulting image quality is higher.
+                By having a higher sampling rate and then taking intermediate values by averaging, we can use
+                supersampling to antialias our triangles.
+                Having intermediate values will result in softer edges, a more finely rendered image, and fewer
+                artifacts such as jaggies.
+                Overall, the supersampling algorithm maintained the logic of the original rasterization pipeline.
+                However, instead of directly adding to the framebuffer, supersampling called for an intermediatary
+                supersample buffer that could
+                temporarily store all of the subpixel values before averaging them to put into the framebuffer. Also,
+                the <strong>isInside</strong> triangle checks were applied to each subpixel sample, rather than each
+                pixel.
+            </p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/rasterizer/task2SR1.png" />
+                    <div class="caption">Sample Rate: 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/rasterizer/task2SR4.png" />
+                    <div class="caption">Sample Rate: 4</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/rasterizer/task2SR16.png" />
+                    <div class="caption">Sample Rate: 16</div>
+                </div>
+
+            </div>
+            <p>As the above images show, an increase in sample rate results in blurrier edges of the triangle. We are
+                adding precision by sampling more values per pixel, and a result of averaging these values, we are left
+                with a gradient of color rather than jagged edges.</p>
+            <h3>Part 3: Transforms</h3>
+            <p>I made the cubeman wave by translating the right arm up by 30 degrees and rotating it counterclockwise by
+                45 degrees.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/rasterizer/task3original.png" />
+                    <div class="caption">Before Transform</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/rasterizer/task3wave.png" />
+                    <div class="caption">After Transform</div>
+                </div>
+            </div>
+            <h2>Section II: Sampling</h2>
+            <h3>Part 4: Barycentric coordinates</h3>
+            <p> Barycentric coordinates are weights that we can use to represent a point by computing a weighted average
+                of triangle vertices through the following formula:</p>
+            <div class="imageContainer">
+                <img style="width:40%" src="assets/img/rasterizer/formula.png" />
+            </div>
+            <p>We can use Barycentric coordinates
+                to represent colors – for example, in the image below, each vertex of the triangle represents one color:
+                red, orange, or black. By interpolating the values at the
+                triangle vertices, we can compute the color of each pixel and form a gradient over the triangle. To
+                exemplify this concept, we can see that the pixel coordinates closer to
+                the black vertex are darker than those closer to the red vertex. Likewise, the pixels closer to the red
+                vertex are more red; therefore, the weight of the vertex in the value of a
+                particular pixel is proportional to its distance to the pixel.
+            </p>
+            <div class="imageContainer">
+                <img style="width: 40%" src="assets/img/rasterizer/task4.png" />
+                <img style="width: 40%" src="assets/img/rasterizer/bary.png" />
+            </div>
+            <h3>Part 5: "Pixel sampling" for texture mapping</h3>
+            <p>Pixel sampling is the process of mapping from the screen space to the texture space and sampling texels
+                from the texture space. I implemented pixel sampling by comverting (x, y) screen sample coordinates to
+                (u, v) coordinates and scaling
+                those by the texture width and height to get tx, ty coordinates, or texture samples. Nearest pixel
+                sampling sets the color of a pixel to be the texel color associated with the tx, ty coordinates closest
+                to the sample in question.
+                Bilinear sampling sets the color of a pixel by performing linear interpolations on the four surrounding
+                pixel coordinates. More specifically, to implement bilinear sampling
+                in this project, I linearly interpolated across the two top and two bottom coordinates, and then
+                interpolated vertically between them.
+            </p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task5SR1BLF.png" />
+                    <div class="caption">Sample Rate 1, Nearest Pixel Sampling</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task5SR1NPS.png" />
+                    <div class="caption">Sample Rate 1, Bilinear Sampling</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task5SR16BLF.png" />
+                    <div class="caption">Sample Rate 16, Nearest Pixel Sampling</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task5SR16NPS.png" />
+                    <div class="caption">Sample Rate 16, Bilinear Sampling</div>
+                </div>
+            </div>
+            <p>The differences between bilinear sampling and nearest pixel sampling are much more evident at lower
+                sample rates, which makes sense because
+                given fewer samples, the information contained by each sample and the effectiveness of a sampling method
+                to retrieve it becomes magnified. At a sample rate of 1, for example, bilinear sampling
+                is more effective at connecting the latitude and longitude lines on the map by blurring the edges. In
+                the nearest pixel sampling image, on the other hand,
+                we can see a disconnect in the lines, meaning that some information is missing. At a higher sample rate
+                of 16, the differences are less noticeable; however, bilinear sampling
+                seems to produce slightly finer and more precise lines than nearest pixel sampling.
+            </p>
+            <h3>Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+            <p>Level sampling can be used to solve the problem of minification, where we want to downsample such that
+                our pixels include a greater number of texels. In this type of sampling,
+                we sample from different levels of a mipmap, a hierarchical structure where the bottom level stores the
+                highest resolution and the top level stores the lowest. I implemented level sampling
+                by finding <em>p_dx_uv</em> and <em>p_dy_uv</em>, which involved computing the barycentric coordinates
+                for every subpixel (xi, yi), as well as those for (xi + 1, yi) and (xi, yi + 1).
+                I then passed these vectors into my helper function <strong>get_level</strong>, which scaled the uv
+                coordinates by the texel width and height, and returned my desired mipmap level.
+            </p>
+            <p>Supersampling is a method that effectively implements antialiasing, however its high-quality results come
+                with the tradeoff that it is costly to compute information for so many samples.
+                Nearest pixel sampling, on the other hand, is faster and less complex in terms of computational power;
+                however, it results lower quality images. In terms of computational cost, bilinear sampling
+                is slower than nearest pixel sampling because it requires calculations involving the four nearest
+                samples to a point, but it is faster than supersampling because we are still checking fewer samples.
+                Overall, supersampling and bilinear sampling will produce higher quality images at different zoom
+                levels, but supersampling is slow and uses the most memory (necessitates the creation of a new
+                supersample buffer).
+                Level sampling scales the quality of an image depending on the mipmap level used. For example, the
+                lowest level (0) will produce the highest quality image because it stores the most information in
+                memory,
+                thus making it also the most costly to compute. Higher levels in the mipmap pyramid will require less
+                memory but will as a result also store less information.
+            </p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task6L0NPS.png" />
+                    <div class="caption">Level Zero, Nearest Pixel Sampling</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task6L0BLS.png" />
+                    <div class="caption">Level Zero, Bilinear Sampling</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task6NLNPS.png" />
+                    <div class="caption">Nearest Level, Nearest Pixel Sampling</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/rasterizer/task6NLBLS.png" />
+                    <div class="caption">Nearest Level, Bilinear Sampling</div>
+                </div>
+            </div>
+        </div>
+
+        <!--PROJECT 2: MESHEDIT-->
+        <div class="card vertical" id="meshEdit" style="margin-left: 250px;">
+            <h1 style="margin-bottom: 50px">MeshEdit</h1>
+            <h2>Overview</h2>
+            <p>In this project, I implemented de Casteljau's algorithm to build Bezier curves and surfaces. I also
+                implemented loop subdivision, an upsampling algorithm
+                that used edge flipping and splitting over halfedge meshes to increase their resolution. I thought it
+                was interesting how pre-splitting edges could alleviate
+                asymmetry when performing loop subdivision, because it could fix the uneven distribution of triangles.
+            </p>
+            <h2>Section I: Bezier Curves and Surfaces</h2>
+            <p>The de Casteljau's algorithm is a recursive solution to evaluating Bezier curves by performing successive
+                linear interpolation across a given number of points. So given n control points, I implemented
+                one step of this algorithm by linearly interpolating to compute the n-1 derivatives, or intermediate
+                control points. By continually calling this <strong>evaluateStep</strong> function, I am able to
+                successively interpolate until I have one point that represents a final point on my curve. The parameter
+                t takes on values between 0 and 1, and changing this parameter results in the computation of different
+                points of the final curve. So by sliding the values of parameter t, we can perform de Casteljau's
+                algorithm to compute the full curve.
+            </p>
+            <h3>Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 50%" src="assets/img/meshEdit/task1-1.png" />
+                    <div class="caption">6 Control Points</div>
+                </div>
+
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task1-2.png" />
+                    <div class="caption">Step 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task1-3.png" />
+                    <div class="caption">Step 2</div>
+                </div>
+
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task1-4.png" />
+                    <div class="caption">Step 3</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task1-5.png" />
+                    <div class="caption">Step 4</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task1-6.png" />
+                    <div class="caption">Step 5</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task1-7.png" />
+                    <div class="caption">Step 6</div>
+                </div>
+
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 50%" src="assets/img/meshEdit/task1-8.png" />
+                    <div class="caption">Modified control points and parameter t</div>
+                </div>
+            </div>
+            <h3>Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+            <p>A Bezier surface is comprised of m rows of control points, where each row forms a Bezier curve
+                parameterized by u. The cross-section of these m rows
+                then form n rows of control points. As a result, we can see a Bezier surface as a sort of matrix, and
+                perform de Casteljau's algorithm successively to the m rows and then n columns. In my implementation, I
+                divided this task into an <strong>evaluate</strong>
+                function, coupled with two helper functions. The first helper function, <strong>evaluateStep</strong>,
+                had the same utility as <strong>evaluateStep</strong> in Task 1,
+                only it accounted for the 3-D space instead of just the 2-D. The second helper function
+                <strong>evaluate1D</strong> successfully calls <strong>evaluateStep</strong> to return
+                one final point on a Bezier curve. The final function <strong>evaluate</strong> calls
+                <strong>evaluate1D</strong> to compute a P_i parameterized by u for m rows in my "matrix" of
+                control points. I then allocate space for a vector that stores these P_i points, and call
+                <strong>evaluate1D</strong> once more to evaluate these P_i points in the column direction,
+                to return one final point on the Bezier curve parameterized by both u and v.
+            </p>
+            <div class="imageContainer">
+                <img style="width: 50%" src="assets/img/meshEdit/task2.png" />
+            </div>
+            <h2>Section II: Sampling</h2>
+            <h3>Part 3: Average normals for half-edge meshes</h3>
+            <p>I implemented the area-weighted vertex normals in the function <strong>normal</strong>, where given a
+                vertex, I iterated through all of the neighboring
+                vertices to compute the area of each face using the <strong>cross</strong> function. I summed up the
+                areas and then divided by the number of faces to compute an average,
+                then I called <strong>unit</strong> on this result to normalize it.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task3-1.png" />
+                    <div class="caption">Teapot shaded without vertex normals</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task3-2.png" />
+                    <div class="caption">Teapot shaded with vertex normals</div>
+                </div>
+            </div>
+            <h3>Part 4: Half-edge Flip</h3>
+            <p>My implementation of the edge flip operation consisted of initializing the values for a mesh and flipping
+                a given edge, which entailed reassigning values and pointers
+                to all relevant mesh elements. To write the <strong>flipEdge</strong> function, I relied on the "Guide
+                to Implementing Edge Operations" document. By following the provided
+                reference document carefully, I was able to avoid any major debugging.
+            </p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task4-1.png" />
+                    <div class="caption">Teapot without edge flips</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task4-2.png" />
+                    <div class="caption">Teapot without edge flips</div>
+                </div>
+            </div>
+            <h3>Part 5: Half-edge Split</h3>
+            <p>To implement the edge split operation, I followed the same process for initializing my mesh as in Task 4.
+                However, edge splitting was more complicated than flipping because I
+                had to create new mesh elements to support the split operation, as well as compute the position for the
+                new vertex, which was the midpoint of the vertices that were on
+                either side of the given EdgeIter e0. I then drew my own after-split diagram to figure out how to
+                reassign element pointers, and followed the diagram in my code implementation.
+                I debugged this section by repeatedly checking that my diagram matched with my actual implementation.
+                While I was able to fix some pointer errors this way, ultimately I realized
+                I was creating my new elements incorrectly. Originally I was creating a new object for each element
+                (e.g. calling EdgeIter() to create a new EdgeIter), whereas
+                I should have been calling the <strong>new______</strong> function (e.g. newEdgeIter()).
+            </p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/meshEdit/task5-1.png" />
+                    <div class="caption">Original teapot</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/meshEdit/task5-2.png" />
+                    <div class="caption">Teapot with edge splits</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/meshEdit/task5-3.png" />
+                    <div class="caption">Teapot with edge splits and flips</div>
+                </div>
+            </div>
+            <h3>Part 6: Loop subdivision for mesh upsampling</h3>
+            <p>I implemented loop subdivision in three steps. In the first step, I iterated through the old vertices and
+                pre-computed their positions – that is, I calculated
+                what their values would be after splitting and flipping edges. I also pre-computed the positions of the
+                new vertices that would be created from edge splitting, and
+                stored their positions in the <strong>newPosition</strong> member variable of the Edge class. In the
+                second step, I call <strong>splitEdge</strong> and <strong>flipEdge</strong>, making
+                sure to only split edges that existed in the original coarse mesh and flip new edges that connected an
+                old vertex and a new vertex. To keep track of new edges and vertices,
+                I altered my implementation of Task 5 by setting the property <strong>isNew</strong> to true for the new
+                vertex and new edges created. In the final step, I update the old vertex positions
+                to their new positions in the upsampled mesh, and set the positions of the new vertices using the
+                precompute values from the first step.
+            </p>
+            <p>As we can see from the following screenshots, meshes become smoother after loop subdivision, and sharp
+                corners and edges become rounded.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/meshEdit/task6-cow-1.png" />
+                    <div class="caption">Original cow</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/meshEdit/task6-cow-2.png" />
+                    <div class="caption">Cow after one loop subdivision</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/meshEdit/task6-cow-3.png" />
+                    <div class="caption">Cow after several loop subdivisions</div>
+                </div>
+            </div>
+            <p>We can reduce this rounded effect by pre-splitting edges along the sharp corners – this process works
+                because having more edges means that we're
+                sampling more points and preserving the original mesh shape. The presplitting process is demonstrated on
+                a cube in the below screenshots.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-cube-1.png" />
+                    <div class="caption">Original cube</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-cube-2.png" />
+                    <div class="caption">Cube after one loop subdivision</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-cube-3.png" />
+                    <div class="caption">Cube after two loop subdivisions</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-cube-4.png" />
+                    <div class="caption">Cube after several loop subdivisions</div>
+                </div>
+            </div>
+            <p>The cube becomes more symmetric after repeated subdivisions; is seems as if in the images, certain
+                corners (such as the bottom-most) produce less rounding than others.
+                It seems as if this is happening because the triangle meshes that make up the sides of the cube are
+                asymmetrically distributed. Therefore, if we pre-split the edges
+                such that each face is composed of four triangles, we are left with a more symmetrical distribution such
+                that each face subdivides in the same way every time we upsample.
+                Below are screenshots of this process:</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-pre-1.png" />
+                    <div class="caption">Pre-split cube</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-pre-2.png" />
+                    <div class="caption">Cube after one loop subdivision</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-pre-3.png" />
+                    <div class="caption">Cube after two loop subdivisions</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/meshEdit/task6-pre-4.png" />
+                    <div class="caption">Cube after several loop subdivisions</div>
+                </div>
+            </div>
+            <p>As we can see, pre-splitting alleviates asymmetry.</p>
+        </div>
+
+        <!--PROJECT 3: PATHTRACER-->
+        <div class="card vertical" id="pathTracer" style="margin-left: 250px;">
+            <h1 style="margin-bottom: 50px">PathTracer</h1>
+            <h2>Overview</h2>
+            <p>In this project, I implemented complex materials such as mirror and glass and in part
+                4, I added depth of field effects using a thin-lens camera model. </p>
+            <h2>Part 1: Ray Generation and Intersection</h2>
+            <p>When max ray depth = 0, the scene is black because there are no light bounces, and the only light we
+                receive is that from the source. When max ray depth = 1,
+                we see the results of a one light bounce from the source off onto the surface of the spheres. When max
+                ray depth = 2, the mirror ball looks reflective as the light from the source begins to
+                bounce off of the walls. While the glass sphere has begun to lighten, its reflection in the mirror
+                sphere is still black. It is also only until max ray depth = 3 that we can fully see the
+                transparency of the glass sphere, since it takes more bounces for light to travel through a material.
+                The underside of the glass sphere also becomes much brighter and there is some light reflected
+                onto the wall. When max ray depth = 5, the glass ball becomes a little brighter as more light is
+                bouncing around inside. At max ray depth = 100, the scene is accurately and brightly lit as many rays of
+                light are bouncing
+                off of all of the surfaces.
+            </p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres0.png" />
+                    <div class="caption">Max Ray Depth: 0</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres1.png" />
+                    <div class="caption">Max Ray Depth: 1</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres2.png" />
+                    <div class="caption">Max Ray Depth: 2</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres3.png" />
+                    <div class="caption">Max Ray Depth: 3</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres4.png" />
+                    <div class="caption">Max Ray Depth: 4</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres5.png" />
+                    <div class="caption">Max Ray Depth: 5</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres100.png" />
+                    <div class="caption">Max Ray Depth: 100</div>
+                </div>
+            </div>
+            <h2>Part 2: Depth of Field</h2>
+            <p>All parts of an image are in focus when we use a pinhole model camera. On the other hand, when we use a
+                thin-lens camera model,
+                different parts of the image are in focus depending on how we choose our lens radius and our focal
+                distance. As a result, the images we get from
+                using a thin-lens camera model are more realistic to how a human eye sees the world than those produced
+                from a pinhole camera.</p>
+            <div class="imageHeader">Different focal distances with a lens radius of 0.5</div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/sphere0.5-4.5.png" />
+                    <div class="caption">Focal Distance: 4.5</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/sphere0.5-4.7.png" />
+                    <div class="caption">Focal Distance: 4.7</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/sphere0.5-4.9.png" />
+                    <div class="caption">Focal Distance: 4.9</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/sphere0.5-5.png" />
+                    <div class="caption">Focal Distance: 5.0</div>
+                </div>
+            </div>
+            <div class="imageHeader">Different lens radii with a focal distance of 2</div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres0.0075-2.png" />
+                    <div class="caption">Lens Radius: 0.0075</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres0.01-2.png" />
+                    <div class="caption">Lens Radius: 0.01</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres0.025-2.png" />
+                    <div class="caption">Lens Radius: 0.025</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/pathTracer/spheres0.05-2.png" />
+                    <div class="caption">Lens Radius: 0.05</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!--PROJECT 4: CLOTHSIM-->
+        <div class="card vertical" id="clothSim" style="margin-left: 250px;">
+            <h1 style="margin-bottom: 50px">Cloth Simulator</h1>
+            <h2>Overview</h2>
+            <p>In this project, I computed the physics of a mass and spring system to simulate the movement of a cloth.
+                In addition, I added support for collision between the cloth and itself, as well
+                as the cloth and other objects, and I also implemented a variety of shaders.
+            </p>
+            <h2>Section I: Masses and springs</h2>
+            <p>Below are screenshots of a cloth wireframe to demonstrate the effects of structural, shear, and bending
+                constraints.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/no-shear.png" />
+                    <div class="caption">No Shear</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/shear.png" />
+                    <div class="caption">Only Shear</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/all-constraints.png" />
+                    <div class="caption">All Constraints</div>
+                </div>
+            </div>
+            <h2>Section II: Simulation via numerical integration</h2>
+            <p>Changing the spring constant ks controls stiffness. A lower ks will produce a stretchier cloth, whereas a
+                higher ks will produce a stiffer cloth.
+                Compared to the default, for example, the cloth produced with a lower ks value has more wrinkles towards
+                the top, implying a greated flexibility that the cloth produced
+                with a higher ks value, which appears to have fewer wrinkles.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/default.png" />
+                    <div class="caption">Default Parameters</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/ks_50.png" />
+                    <div class="caption">ks=50</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/ks_50000.png" />
+                    <div class="caption">ks=50000</div>
+                </div>
+            </div>
+            <p>Changing the density affects how much the cloth is pulled downwards by gravity. A lower density means
+                that the cloth will not be heavily affected by gravity,
+                whereas a higher density means that the cloth will be pulled down a lot more. For example, we can see
+                that the cloth produced with a density of 100 has a more noticeable
+                dip towards the top in comparison to the default, whereas the cloth produced with a density of 1 has
+                almost no dip, indicating that gravity is barely pulling it down.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/default.png" />
+                    <div class="caption">Default Parameters</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/density_1.png" />
+                    <div class="caption">Density=1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/density_100.png" />
+                    <div class="caption">Density=100</div>
+                </div>
+            </div>
+            <p>Changing the damping factor is related to how quickly a spring loses its energy and stops oscillating.
+                When I set the damping value to 0.01, for example, the cloth swung back and forth
+                dramatically and did not reach a stable resting state for quite a while. On the other hand, when I set
+                the damping value to be much higher (0.8), the cloth had almost no oscillation at all,
+                and reached its final resting state almost immediately.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/default.png" />
+                    <div class="caption">Default Parameters</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/damp_0.01.png" />
+                    <div class="caption">Damp=0.01</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/damp_0.8.png" />
+                    <div class="caption">Damp=0.8</div>
+                </div>
+            </div>
+            <h2>Section III: Handling collisions with other objects</h2>
+            <h3>Handing collisions with spheres</h3>
+            <p>Compared to the default, having a lower ks value produced an image of a sphere where the cloth
+                sagged a little more, implying a greater flexibility in the fabric. In contrast, when the ks value is
+                super high, there are fewer wrinkles than that of the default
+                because the cloth is much stiffer.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/default_sphere.png" />
+                    <div class="caption">Default Sphere (ks=5000)</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/sphere_500.png" />
+                    <div class="caption">ks=500</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 90%" src="assets/img/clothSim/sphere_50000.png" />
+                    <div class="caption">ks=50000</div>
+                </div>
+            </div>
+            <h3>Handing collisions with planes</h3>
+            <p>Below is a screenshot of a cloth resting peacefully on a plane.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 50%" src="assets/img/clothSim/plane.png" />
+                    <div class="caption">Plane at resting state</div>
+                </div>
+            </div>
+            <h2>Section IV: Handling self-collisions</h2>
+            <h3>Self-Collision with default parameters</h3>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/default_collide_1.png" />
+                    <div class="caption">Timestep 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/default_collide_2.png" />
+                    <div class="caption">Timestep 2</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/default_collide_3.png" />
+                    <div class="caption">Timestep 3</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/default_collide_4.png" />
+                    <div class="caption">Timestep 4</div>
+                </div>
+            </div>
+            <h3>Self-Collision with Density = 1</h3>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_1_collide_1.png" />
+                    <div class="caption">Timestep 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_1_collide_2.png" />
+                    <div class="caption">Timestep 2</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_1_collide_3.png" />
+                    <div class="caption">Timestep 3</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_1_collide_4.png" />
+                    <div class="caption">Timestep 4</div>
+                </div>
+            </div>
+            <h3>Self-Collision with Density = 50</h3>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_50_collide_1.png" />
+                    <div class="caption">Timestep 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_50_collide_2.png" />
+                    <div class="caption">Timestep 2</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_50_collide_3.png" />
+                    <div class="caption">Timestep 3</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/density_50_collide_4.png" />
+                    <div class="caption">Timestep 4</div>
+                </div>
+            </div>
+            <p> When I increase the density, the cloth folds over very wrinkled and flowy, whereas when I decrease the
+                density, the cloth looks more rigid, and there are fewer creases.</p>
+            <h3>Self-Collision with ks = 500</h3>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_500_collide_1.png" />
+                    <div class="caption">Timestep 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_500_collide_2.png" />
+                    <div class="caption">Timestep 2</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_500_collide_3.png" />
+                    <div class="caption">Timestep 3</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_500_collide_4.png" />
+                    <div class="caption">Timestep 4</div>
+                </div>
+            </div>
+            <h3>Self-Collision with ks = 50000</h3>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_50000_collide_1.png" />
+                    <div class="caption">Timestep 1</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_50000_collide_2.png" />
+                    <div class="caption">Timestep 2</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_50000_collide_3.png" />
+                    <div class="caption">Timestep 3</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ks_50000_collide_4.png" />
+                    <div class="caption">Timestep 4</div>
+                </div>
+            </div>
+            <p>When I increase the ks value, the cloth looks stiffer for the reasons explained previously. When I
+                decrease the ks value, the cloth looks like it has more give and looseness, implying that it is
+                stretchier because of the low ks. Also,
+                the cloth with a higher ks value takes much longer to reach its final resting state, matching what is
+                expected because a high ks value increases the spring of the cloth.
+            </p>
+
+            <h2>Section V: Shaders</h2>
+            <p>A shader program is one that runs in parallel on a GPU and outputs a 4D vector that contains information
+                such as color and texture.
+                Vertex shaders change vertex properties such as their position and normal vectors. Fragment shaders are
+                used post-rasterization and compute the colors for pixels.
+                Blinn Phong shading uses a combination of ambient and diffuse lighting and specular highlights to create
+                a realistic shading model. It employs the formula below, where the first
+                element accounts for ambient light, the second for diffuse, and the third for the specular highlights.
+            </p>
+            <div class="imageContainer">
+                <img style="width:40%" src="assets/img/clothSim/bp.png" />
+            </div>
+            <p>Below are screenshots of my Blinn-Phong shader outputting each of the components by themselves, and one
+                using the entire Blinn-Phong model</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/ambient.png" />
+                    <div class="caption">Ambient Component</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/diffuse.png" />
+                    <div class="caption">Diffuse Component</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/specular.png" />
+                    <div class="caption">Specular Component</div>
+                </div>
+                <div class="imageWCaptions">
+                    <img style="width: 80%" src="assets/img/clothSim/whole.png" />
+                    <div class="caption">Blinn-Phong Shading</div>
+                </div>
+            </div>
+            <div class="imageHeader">A texture mapping shader using a custom texture</div>
+            <div class="imageContainer">
+                <img style="width:40%" src="assets/img/clothSim/texture.png" />
+            </div>
+            <div class="imageHeader">Bump Mapping performed on a cloth and on a sphere</div>
+            <div class="imageContainer">
+                <img style="width: 30%; padding: 10px;" src="assets/img/clothSim/bump_sphere.png" />
+                <img style="width: 30%; padding: 10px" src="assets/img/clothSim/bump_map.png" />
+            </div>
+            <div class="imageHeader">Displacement Mapping</div>
+            <div class="imageContainer">
+                <img style="width: 30%; padding: 10px;" src="assets/img/clothSim/displacement_map.png" />
+                <img style="width: 30%; padding: 10px" src="assets/img/clothSim/displacement_sphere.png" />
+            </div>
+
+            <p>For the bump maps, I used a height of 10 and for the displacement maps, I used a height of 0.2. To
+                implement bump mapping, I used the normals of the texture map to shade the
+                surface changing the fragment shader, whereas for displacement mapping, I actually changed the surface
+                itself through use of both the fragment and the vertex shader.
+            </p>
+            <p>The following screenshots show how the two shaders react to the sphere by changing the sphere mesh's
+                coarseness.</p>
+            <div class="imageContainer">
+                <div class="imageWCaptions" style="padding: 10px;">
+                    <img style="width: 300px" src="assets/img/clothSim/bump-16.png" />
+                    <div class="caption">Bump with Coarseness 16</div>
+                </div>
+                <div class="imageWCaptions" style="padding: 10px;">
+                    <img style="width: 300px" src="assets/img/clothSim/displacement-16.png" />
+                    <div class="caption">Displacement with Coarseness 16</div>
+                </div>
+            </div>
+            <div class="imageContainer">
+                <div class="imageWCaptions" style="padding: 10px;">
+                    <img style="width: 300px" src="assets/img/clothSim/bump-128.png" />
+                    <div class="caption">Bump with Coarseness 128</div>
+                </div>
+                <div class="imageWCaptions" style="padding: 10px;">
+                    <img style="width: 300px" src="assets/img/clothSim/displacement-128.png" />
+                    <div class="caption">Displacement with Coarseness 128</div>
+                </div>
+            </div>
+            <div class="imageHeader">Mirror shader on a cloth and on a sphere</div>
+            <div class="imageContainer">
+                <img style="width: 30%; padding: 10px;" src="assets/img/clothSim/mirror-1.png" />
+                <img style="width: 30%; padding: 10px" src="assets/img/clothSim/mirror-2.png" />
+            </div>
+        </div>
+
+    </div>
+
+
+</body>
+
+</html>
