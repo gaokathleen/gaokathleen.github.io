@@ -7,6 +7,11 @@ var msnry = new Masonry( elem, {
   fitWidth: true
 });
 
+imagesLoaded(elem).on( 'progress', function() {
+  // layout Masonry after each image loads
+  msnry.layout();
+});
+
 
 
 // document.body.onload = function(){
